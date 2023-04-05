@@ -1,0 +1,108 @@
+---
+title: "capstone_supernova_classification"
+output: pdf_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+## Imports and data init
+```{r}
+library(tidyverse)
+library(dplyr)
+
+lightcurve_data_b_1 <- read.csv("plasticc_test_set_batch1.csv")
+meta_data <- read.csv("plasticc_test_metadata.csv")
+```
+
+Wide-field synoptic surveys are discovering an ever-growing number of transients, with nearly 20 000 publicly reported in 2019 alone. Of these transients, just under 2000 were spectroscopically classified as supernovae (https://royalsocietypublishing.org/doi/10.1098/rsos.200467) 
+
+Data cleaning and conversion of flux to magnitude:
+
+```{r pressure, echo=FALSE}
+get_zero_point_flux_mag <- function(filter){
+  f_0 = 0
+  m_0 = 0
+    if(filter == "u"){
+      f_0 = 23.9#Jy
+      m_0 = 23.9
+  } else if (filter == "g"){
+    f_0 = 28.3
+    m_0 = 25.1
+  } else if (filter == "r"){
+    f_0 = 28.4
+    m_0 = 24.4
+  } else if (filter == "i"){
+    f_0 = 28.1
+    m_0 = 24.1
+  } else if (filter == "z"){
+    f_0 = 27.8
+    m_0 = 22.8
+  } else if (filter == "y"){ #UKIRT 
+    f_0 = 10.88
+    m_0 = 20.9
+  }
+  else{
+    f_0 = NULL
+    m_0 = NULL
+  }
+  return(c(f_0, m_0))
+}
+calculate_apparent_magnitude <- function(flux, filter){
+  f <- abs(flux)
+  zero_points <- get_zero_point_flux_mag(filter)
+  result <- -2.5 * log10(f/zero_points[1]) + zero_points[2]
+  return(result)
+}
+calculate_absolute_magnitude <- function(flux, distance, filter) {
+  # We assume the flux of the objects are in Jy (Jansky) given their size.
+  # Values of f_0 are using SDSS standards.
+  f <- abs(flux) # to avoid NaNs from log(-x)
+  zero_points <- get_zero_point_flux_mag(filter)
+  apparent_magnitude <- calculate_apparent_magnitude(flux, filter)
+  absolute_magnitude <- apparent_magnitude - 5 * log10(distance/10) + 2.5 * log10(f/zero_points[1])
+  return(absolute_magnitude)
+}
+
+passbands = c("u", "g", "r", "i", "z", "y")
+mut_lightcurve_data <- lightcurve_data_b_1 %>% group_by(object_id) %>% 
+  mutate(passband_letter = passbands[passband + 1])
+mut_lightcurve_data
+
+merged_dfs <- merge(meta_data, mut_lightcurve_data, by = "object_id", all.x = TRUE)
+merged_dfs
+
+mut_lightcurve_data <- mut_lightcurve_data %>% 
+  rowwise() %>% 
+  mutate(
+    true_parsecs = 10 ^ ((calculate_apparent_magnitude(flux, passband_letter) - merged_dfs[match(object_id, merged_dfs$object_id), "true_distmod"] + 5)/5)
+  )
+
+# do i need to merge them into one table??
+
+mut_lightcurve_data
+
+
+# mut_lightcurve_data
+# mut_lightcurve_data <- mutate(mut_lightcurve_data, true_parsecs = 10^((calculate_apparent_magnitude(flux, passband_letter) - meta_data[meta_data$object_id == object_id]$true_distmod + 5)/5))
+
+
+# mean_mag_with_mjd <- mut_lightcurve_data %>% summarise(
+#   avg_abs_magnitude = mean(calculate_magnitude(flux, true_parsecs, passband_letter)),
+#   min_mjd = min(mjd),
+#   max_mjd = max(mjd),
+#   mjd_range = max_mjd - min_mjd)
+# 
+# 
+# mean_mag_with_mjd
+# mean_mag_with_mjd %>% ggplot() + aes(x = mjd_range, y = avg_abs_magnitude) + geom_point()
+
+```
