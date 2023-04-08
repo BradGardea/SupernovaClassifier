@@ -8,22 +8,24 @@ date: "`r Sys.Date()`"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+Question 1:
 
-This part of the presentation will be focusing on the classification of supernova types based on standards developed for classification using absolute magnitude and MJD 
+How can we best what are the most impactful variables when it comes to classiyfing supernovas with the given data using a decision/classification tree.
+
 
 
 ## Imports and data init
 ```{r}
 library(tidyverse)
+library(randomForest)
 library(dplyr)
 library(rpart)
 library(rpart.plot)
 
-lightcurve_data_b_1 <- read.csv("plasticc_test_set_batch1.csv")
-lightcurve_train <- read.csv("plasticc_train_lightcurves.csv")
-meta_data_test <- read.csv("plasticc_test_metadata.csv")
-meta_data_train <- read.csv("plasticc_train_metadata.csv")
+lightcurve_data_b_1 <- read.csv("Data/plasticc_test_set_batch1.csv")
+lightcurve_train <- read.csv("Data/plasticc_train_lightcurves.csv")
+meta_data_test <- read.csv("Data/plasticc_test_metadata.csv")
+meta_data_train <- read.csv("Data/plasticc_train_metadata.csv")
 ```
 
 
@@ -82,25 +84,6 @@ calculate_luminosity <- function(flux, distmod){
   return(4*pi * (distance_parsec)^2 * flux_erg)
 }
 
-get_days_to_10pct_luminosity <- function(df){
-  max_luminosity <- df %>%
-  group_by(object_id) %>%
-  summarize(max_lum = max(luminosity)) %>%
-  ungroup()
-
-  mjd_max_luminosity <- df %>%
-    inner_join(max_luminosity, by = c("object_id", "luminosity" = "max_lum")) %>%
-    select(object_id, mjd)
-  
-  first_max_mjd <- first(mjd_max_luminosity$mjd)
-  
-  # We assume the luminosity data for the dataframe has been calculated
-    first_10pct_lumin <- df %>% group_by(object_id) %>% filter(luminosity <= 0.1 * max(luminosity), mjd > first_max_mjd)
-    mjd_first_10pct_lumin <- head(first_10pct_lumin, 1)$mjd
-    
-    return(first_max_mjd - mjd_first_10pct_lumin)
-}
-
 get_lightcurve_summary <- function(lightcurve_data_param, potential_supernovas_param){
   
   # lightcurve_data_param <- light_train
@@ -112,28 +95,40 @@ get_lightcurve_summary <- function(lightcurve_data_param, potential_supernovas_p
   mut_filter_lightcurve_data <- filter_lightcurve_data %>% mutate(passband_letter = passbands[passband + 1])
   
   mut_meta_lightcurve_merge <- merge(mut_filter_lightcurve_data, potential_supernovas_param, by = "object_id", all.x = TRUE)
+  
+  
+  # test_730 <- mut_meta_lightcurve_merge_abs_mag %>% filter(object_id == 730)
+  # max(test_730$luminosity)
+  # test_730[match( max(test_730$luminosity), test_730$luminosity), ]
+  #    test <- test_730 %>% group_by(object_id) %>% mutate(v = mut_meta_lightcurve_merge_abs_mag[match(max(luminosity), mut_meta_lightcurve_merge_abs_mag$luminosity), ]$mjd)
+  
 
   mut_meta_lightcurve_merge_abs_mag <- mut_meta_lightcurve_merge %>% rowwise() %>% mutate(
   absolute_magnitude = calculate_absolute_magnitude(flux, true_distmod, passband_letter),
-  luminosity = calculate_luminosity(flux, true_distmod)) # calculate per passband??
-  
+  luminosity = calculate_luminosity(flux, true_distmod)) %>% group_by(object_id) %>% mutate(mjd_max_luminosity =  mut_meta_lightcurve_merge_abs_mag[match(max(luminosity), mut_meta_lightcurve_merge_abs_mag$luminosity), ]$mjd, mjd_10pct_luminosity = mut_meta_lightcurve_merge_abs_mag[which(mut_meta_lightcurve_merge_abs_mag$luminosity <= 0.1 * max(luminosity) & mjd > mjd_max_luminosity)[1], ]$mjd)
 
-  # mut_meta_lightcurve_merge_abs_mag_lumin_10 <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% mutate(luminosity_10pct = first_10pct_lumin)
-  
-  # mut_meta_lightcurve_merge_abs_mag_luminosity_10pct <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% mutate(luminosity_10pct = head(mut_meta_lightcurve_merge_abs_mag %>% filter(luminosity <= 0.1 * max(luminosity)) , 1)$luminosity)
 
-  merge_summary <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% summarise(
-    object_id = object_id,
+  # merge_summary <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% summarise(
+  #   id = object_id,
+  #   class_label = true_target,
+  #   max_absolute_magnitude = max(absolute_magnitude),
+  #   min_absolute_magnitude = min(absolute_magnitude),
+  #   absolute_magnitude_range = max(absolute_magnitude) -  min(absolute_magnitude),
+  #   max_luminosity = max(luminosity),
+  #   min_luminosity = min(luminosity),
+  #   days_to_10pct = mjd_10pct_luminosity - mjd_max_luminosity,
+  #   mjd_range = max(mjd) - min(mjd))
+  
+    merge_summary <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% summarise(
+    id = object_id,
     class_label = true_target,
-    absolute_magnitude = absolute_magnitude,
     max_absolute_magnitude = max(absolute_magnitude),
     min_absolute_magnitude = min(absolute_magnitude),
-    absolute_magnitude_range = abs(min(absolute_magnitude) - max(absolute_magnitude)),
+    absolute_magnitude_range = max(absolute_magnitude) -  min(absolute_magnitude),
     max_luminosity = max(luminosity),
-    days_to_10pct = get_days_to_10pct_luminosity(mut_meta_lightcurve_merge_abs_mag),
-    days_to_peak = true_peakmjd - min(mjd), #change to index of peak luminosity
-    passband = passband,
-    mjd_range = max(mjd) - min(mjd))
+    min_luminosity = min(luminosity),
+    days_to_10pct = mjd_10pct_luminosity - mjd_max_luminosity,
+    mjd_range = max(mjd) - min(mjd)) %>% distinct(object_id, .keep_all = TRUE)
 
   return(merge_summary)
 }
@@ -159,7 +154,16 @@ potential_supernovas_train <- meta_data_train %>% filter(true_target <= 95, true
 ## Research shows that only 14 class labels are recognized, anything greater than this is not a value that can be classified by this algorithm.
 
 potential_supernovas_test <- meta_data_test %>% filter(true_target <= 95, true_target %in% c(6, 16, 42, 52, 53, 62))
-#potential_supernovas %>% ggplot() + aes(x=true_target) + geom_bar() + ggtitle("Distribution of true_target for objects that are most likley supernovas")
+
+
+# potential_supernovas_train %>% ggplot() + aes(x=true_target) + geom_bar() + ggtitle("Distribution of true_target for objects that are most likley supernovas (train)")
+# 
+# potential_supernovas_test %>% ggplot() + aes(x=true_target) + geom_bar() + ggtitle("Distribution of true_target for objects that are most likley supernovas (test)")
+
+# num_groups <- potential_supernovas_test %>% group_by(true_target) %>% summarise(n=n())
+# num_groups
+
+
 #meta_data %>% ggplot() + aes(x=true_target) + geom_bar() + ggtitle("Distribution of true_target for objects in meta data")
 
 
@@ -170,7 +174,11 @@ test_summary <- get_lightcurve_summary(light_test, potential_supernovas_test)
 # weights[train_summary$absolute_magnitude != 0] <- 0.001
 # weights[train_summary$mjd_range != 0] <- 10
 
-classification_model = rpart(class_label ~ max_absolute_magnitude + min_absolute_magnitude + days_to_peak, data = train_summary, method = 'class')
+classification_model = rpart(class_label ~ max_absolute_magnitude + min_absolute_magnitude + days_to_10pct + max_luminosity + min_luminosity + mjd_range, data = train_summary, method = 'class')
+
+# rf <- randomForest(Species~., data=train, proximity=TRUE)
+
+
 classification_model$variable.importance
 
 rpart.plot(classification_model) # model is not displaying all classification
