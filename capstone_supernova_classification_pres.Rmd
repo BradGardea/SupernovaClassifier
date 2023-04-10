@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Question 1:
 
-How can we best what are the most impactful variables when it comes to classiyfing supernovas with the given data using a decision/classification tree.
+How can we best what are the most impactful variables and best classification model to use when it comes to classiyfing supernovas with the given data using a decision/classification tree.
 
 
 
@@ -21,6 +21,7 @@ library(randomForest)
 library(dplyr)
 library(rpart)
 library(rpart.plot)
+library(party)
 
 lightcurve_data_b_1 <- read.csv("Data/plasticc_test_set_batch1.csv")
 lightcurve_train <- read.csv("Data/plasticc_train_lightcurves.csv")
@@ -89,9 +90,11 @@ get_lightcurve_summary <- function(lightcurve_data_param, potential_supernovas_p
   # lightcurve_data_param <- light_train
   # potential_supernovas_param <- potential_supernovas_train
   
-  filter_lightcurve_data <- lightcurve_data_param %>% filter(flux != 0, object_id %in%
-                                                               potential_supernovas_param$object_id)
+  filter_lightcurve_data <- lightcurve_data_param %>% 
+    filter(flux != 0, object_id %in% potential_supernovas_param$object_id) 
+  
   passbands = c("u", "g", "r", "i", "z", "y")
+  
   mut_filter_lightcurve_data <- filter_lightcurve_data %>% mutate(passband_letter = passbands[passband + 1])
   
   mut_meta_lightcurve_merge <- merge(mut_filter_lightcurve_data, potential_supernovas_param, by = "object_id", all.x = TRUE)
@@ -102,10 +105,19 @@ get_lightcurve_summary <- function(lightcurve_data_param, potential_supernovas_p
   # test_730[match( max(test_730$luminosity), test_730$luminosity), ]
   #    test <- test_730 %>% group_by(object_id) %>% mutate(v = mut_meta_lightcurve_merge_abs_mag[match(max(luminosity), mut_meta_lightcurve_merge_abs_mag$luminosity), ]$mjd)
   
-
+  suppressWarnings({
   mut_meta_lightcurve_merge_abs_mag <- mut_meta_lightcurve_merge %>% rowwise() %>% mutate(
   absolute_magnitude = calculate_absolute_magnitude(flux, true_distmod, passband_letter),
-  luminosity = calculate_luminosity(flux, true_distmod)) %>% group_by(object_id) %>% mutate(mjd_max_luminosity =  mut_meta_lightcurve_merge_abs_mag[match(max(luminosity), mut_meta_lightcurve_merge_abs_mag$luminosity), ]$mjd, mjd_10pct_luminosity = mut_meta_lightcurve_merge_abs_mag[which(mut_meta_lightcurve_merge_abs_mag$luminosity <= 0.1 * max(luminosity) & mjd > mjd_max_luminosity)[1], ]$mjd)
+  luminosity = calculate_luminosity(flux, true_distmod))
+  })
+  
+  df_max_luminosity <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% filter(luminosity == max(luminosity)) %>% summarise(object_id = object_id, max_luminosity = max(luminosity), mjd_max_luminosity = mjd)
+  
+  df_50pct_luminosity <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% filter(luminosity <= 0.5 * max(luminosity), mjd > mut_meta_lightcurve_merge_abs_mag[match(max(luminosity),                                        mut_meta_lightcurve_merge_abs_mag$luminosity), ]$mjd) %>% summarize(
+    object_id = object_id[1],
+    val_50pct_luminosity = luminosity[1],
+    mjd_50pct_luminosity = mjd[1]
+    ) %>% select(object_id, mjd_50pct_luminosity, val_50pct_luminosity)
 
 
   # merge_summary <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% summarise(
@@ -119,18 +131,19 @@ get_lightcurve_summary <- function(lightcurve_data_param, potential_supernovas_p
   #   days_to_10pct = mjd_10pct_luminosity - mjd_max_luminosity,
   #   mjd_range = max(mjd) - min(mjd))
   
+  
+  
     merge_summary <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% summarise(
     id = object_id,
     class_label = true_target,
     max_absolute_magnitude = max(absolute_magnitude),
     min_absolute_magnitude = min(absolute_magnitude),
-    absolute_magnitude_range = max(absolute_magnitude) -  min(absolute_magnitude),
-    max_luminosity = max(luminosity),
     min_luminosity = min(luminosity),
-    days_to_10pct = mjd_10pct_luminosity - mjd_max_luminosity,
     mjd_range = max(mjd) - min(mjd)) %>% distinct(object_id, .keep_all = TRUE)
+    merged_dfs <- merge(df_max_luminosity, df_50pct_luminosity, by = "object_id")
+    merge_summary_complete <- merge(merge_summary, merged_dfs, by = "object_id") %>% mutate(days_to_50pct_luminosity = mjd_50pct_luminosity - mjd_max_luminosity)
 
-  return(merge_summary)
+  return(merge_summary_complete)
 }
 
 ```
@@ -174,14 +187,17 @@ test_summary <- get_lightcurve_summary(light_test, potential_supernovas_test)
 # weights[train_summary$absolute_magnitude != 0] <- 0.001
 # weights[train_summary$mjd_range != 0] <- 10
 
-classification_model = rpart(class_label ~ max_absolute_magnitude + min_absolute_magnitude + days_to_10pct + max_luminosity + min_luminosity + mjd_range, data = train_summary, method = 'class')
+classification_model_rpart = rpart(class_label ~ max_absolute_magnitude + min_absolute_magnitude + days_to_50pct_luminosity, data = train_summary, method = 'class')
+classification_model_rforest <- randomForest(class_label ~ max_absolute_magnitude + min_absolute_magnitude + days_to_50pct_luminosity, data = train_summary, proximity=TRUE)
 
-# rf <- randomForest(Species~., data=train, proximity=TRUE)
+classification_model_ctree <- ctree(class_label~ max_absolute_magnitude + min_absolute_magnitude + days_to_50pct_luminosity, data = train_summary)
+classification_model_cforest <- cforest(class_label ~ max_absolute_magnitude + min_absolute_magnitude + days_to_50pct_luminosity, data = train_summary)
 
 
-classification_model$variable.importance
+classification_model_rpart$variable.importance
 
-rpart.plot(classification_model) # model is not displaying all classification
+rpart.plot(classification_model_rpart)
+plot(classification_model_ctree, type="simple")
 
 predict_test <- predict(classification_model, test_summary, type = "class")
 confusion_matrix <- table(test_summary$class_label, predict_test)
