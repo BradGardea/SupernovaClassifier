@@ -1,21 +1,5 @@
----
-title: "capstone_supernova_classification"
-output: pdf_document
-date: "`r Sys.Date()`"
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-Question 1:
-
-How can we best what are the most impactful variables and best classification model to use when it comes to classiyfing supernovas with the given data using a decision/classification tree.
-
-
 
 ## Imports and data init
-```{r}
 library(tidyverse)
 library(randomForest)
 library(dplyr)
@@ -27,17 +11,14 @@ lightcurve_data_b_1 <- read.csv("Data/plasticc_test_set_batch1.csv")
 lightcurve_train <- read.csv("Data/plasticc_train_lightcurves.csv")
 meta_data_test <- read.csv("Data/plasticc_test_metadata.csv")
 meta_data_train <- read.csv("Data/plasticc_train_metadata.csv")
-```
 
 
-## Helper function init
-```{r pressure, echo=FALSE}
 get_zero_point_flux_mag <- function(filter){
   f_0 = 0
   #m_0 = 0
-    if(filter == "u"){
-      f_0 = 1810#Jy
-      #m_0 = 23.9#Jy
+  if(filter == "u"){
+    f_0 = 1810#Jy
+    #m_0 = 23.9#Jy
   } else if (filter == "g"){ #SDSS passbands calculated with Vega as zero point reference
     f_0 = 3640
     #m_0 = 25.1
@@ -106,9 +87,9 @@ get_lightcurve_summary <- function(lightcurve_data_param, potential_supernovas_p
   #    test <- test_730 %>% group_by(object_id) %>% mutate(v = mut_meta_lightcurve_merge_abs_mag[match(max(luminosity), mut_meta_lightcurve_merge_abs_mag$luminosity), ]$mjd)
   
   suppressWarnings({
-  mut_meta_lightcurve_merge_abs_mag <- mut_meta_lightcurve_merge %>% rowwise() %>% mutate(
-  absolute_magnitude = calculate_absolute_magnitude(flux, true_distmod, passband_letter),
-  luminosity = calculate_luminosity(flux, true_distmod))
+    mut_meta_lightcurve_merge_abs_mag <- mut_meta_lightcurve_merge %>% rowwise() %>% mutate(
+      absolute_magnitude = calculate_absolute_magnitude(flux, true_distmod, passband_letter),
+      luminosity = calculate_luminosity(flux, true_distmod))
   })
   
   df_max_luminosity <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% filter(luminosity == max(luminosity)) %>% summarise(object_id = object_id, max_luminosity = max(luminosity), mjd_max_luminosity = mjd)
@@ -117,9 +98,9 @@ get_lightcurve_summary <- function(lightcurve_data_param, potential_supernovas_p
     object_id = object_id[1],
     val_50pct_luminosity = luminosity[1],
     mjd_50pct_luminosity = mjd[1]
-    ) %>% select(object_id, mjd_50pct_luminosity, val_50pct_luminosity)
-
-
+  ) %>% select(object_id, mjd_50pct_luminosity, val_50pct_luminosity)
+  
+  
   # merge_summary <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% summarise(
   #   id = object_id,
   #   class_label = true_target,
@@ -133,35 +114,23 @@ get_lightcurve_summary <- function(lightcurve_data_param, potential_supernovas_p
   
   
   
-    merge_summary <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% summarise(
-    id = object_id,
+  merge_summary <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% summarise(
     class_label = true_target,
     max_absolute_magnitude = max(absolute_magnitude),
     min_absolute_magnitude = min(absolute_magnitude),
     min_luminosity = min(luminosity),
     mjd_range = max(mjd) - min(mjd),
     vpec = true_vpec) %>% distinct(object_id, .keep_all = TRUE)
-    
-    
-    merged_dfs <- merge(df_max_luminosity, df_50pct_luminosity, by = "object_id")
-    merge_summary_complete <- merge(merge_summary, merged_dfs, by = "object_id") %>% mutate(days_to_50pct_luminosity = mjd_50pct_luminosity - mjd_max_luminosity)
-
+  
+  
+  merged_dfs <- merge(df_max_luminosity, df_50pct_luminosity, by = "object_id")
+  merge_summary_complete <- merge(merge_summary, merged_dfs, by = "object_id") %>% mutate(days_to_50pct_luminosity = mjd_50pct_luminosity - mjd_max_luminosity)
+  
   return(merge_summary_complete)
 }
 
-```
-
-
-The provided data-set defines 14 class labels that correspond to differnt transient events. The ones were are interested in are:
-  class 6: SNIa (Type Ia supernova)
-  class 16: SNIbc (core-collapse supernova Type Ibc)
-  class 42: SNIIn (Type IIn supernova)
-  class 52: SNII (core-collapse supernova Type II)
-  class 53: SNIIL (Type II-L supernova)
-  class 62: SNIIb (Type IIb supernova)
-
 ## Object classification
-```{r}
+
 light_train <- lightcurve_train
 light_test <- lightcurve_data_b_1
 
@@ -172,9 +141,9 @@ potential_supernovas_train <- meta_data_train %>% filter(true_target <= 95, true
 potential_supernovas_test <- meta_data_test %>% filter(true_target <= 95, true_target %in% c(6, 16, 42, 52, 53, 62))
 
 
-# potential_supernovas_train %>% ggplot() + aes(x=true_target) + geom_bar() + ggtitle("Distribution of true_target for objects that are most likley supernovas (train)")
-# # 
-# potential_supernovas_test %>% ggplot() + aes(x=true_target) + geom_bar() + ggtitle("Distribution of true_target for objects that are most likley supernovas (test)")
+potential_supernovas_train %>% ggplot() + aes(x=true_target) + geom_bar() + ggtitle("Distribution of true_target for objects that are most likley supernovas (train)")
+# 
+potential_supernovas_test %>% ggplot() + aes(x=true_target) + geom_bar() + ggtitle("Distribution of true_target for objects that are most likley supernovas (test)")
 
 # num_groups <- potential_supernovas_test %>% group_by(true_target) %>% summarise(n=n())
 # num_groups
@@ -186,49 +155,48 @@ potential_supernovas_test <- meta_data_test %>% filter(true_target <= 95, true_t
 train_summary <- get_lightcurve_summary(light_train, potential_supernovas_train)
 test_summary <- get_lightcurve_summary(light_test, potential_supernovas_test)
 
-# weights <- rep(1, nrow(train_summary))
-# weights[train_summary$absolute_magnitude != 0] <- 0.001
-# weights[train_summary$mjd_range != 0] <- 10
+classification_model_rpart <- rpart(class_label ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity + days_to_50pct_luminosity + vpec, data = train_summary, method = 'class')
+classification_model_rforest <- randomForest(as.factor(class_label) ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity + days_to_50pct_luminosity + vpec, data = train_summary, importance = TRUE, proximity = TRUE)
 
-classification_model_rpart = rpart(class_label ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity + days_to_50pct_luminosity + vpec, data = train_summary, method = 'class')
-classification_model_rforest <- randomForest(class_label ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity + days_to_50pct_luminosity + vpec, data = train_summary)
+classification_model_ctree <- ctree(as.factor(class_label) ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity + days_to_50pct_luminosity + vpec, data = train_summary)
+classification_model_cforest <- cforest(as.factor(class_label) ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity + days_to_50pct_luminosity + vpec, data = train_summary)
 
-classification_model_ctree <- ctree(class_label ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity + days_to_50pct_luminosity + vpec, data = train_summary)
-# classification_model_cforest <- cforest(class_label ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity, controls = cforest_unbiased(), data = train_summary)
-
-classification_model_rpart
 classification_model_rforest
 classification_model_ctree
+
 classification_model_cforest
-
-
 
 
 classification_model_rpart$variable.importance
 
 rpart.plot(classification_model_rpart)
+plot(classification_model_ctree)
 
 predict_test_rpart <- predict(classification_model_rpart, test_summary, type = "class")
 predict_test_rforest <- predict(classification_model_rforest, test_summary, type = "class")
 predict_test_ctree <- predict(classification_model_ctree, newdata = test_summary)
-# predict_test_cforest <- predict(classification_model_cforest, newdata = test_summary)
-
-confusion_matrix_rpart <- table(test_summary$class_label, predict_test_rpart)
-confusion_matrix_rforest <- table(test_summary$class_label, predict_test_rforest)
-confusion_matrix_ctree <- table(test_summary$class_label, predict_test_ctree)
-
-percent_correct_rpart <- diag(confusion_matrix_rpart)
-
-  
+predict_test_cforest <- predict(classification_model_cforest, newdata = test_summary)
 
 
-# confusion_matrix_cforest <- table(test_summary$class_label, predict_test_cforest)
+confusion_matrix_rpart <-  as.matrix(table(test_summary$class_label, predict_test_rpart))
+confusion_matrix_rforest <- as.data.frame.matrix(table(test_summary$class_label, predict_test_rforest))
+confusion_matrix_ctree <- as.matrix(table(test_summary$class_label, predict_test_ctree))
+confusion_matrix_cforest <- as.data.frame.matrix(table(test_summary$class_label, predict_test_cforest))
 
-confusion_matrix_rpart
-plot(confusion_matrix_rforest)
-plot(confusion_matrix_ctree)
-# confusion_matrix_cforest
+percent_correct_rpart <- sum(diag(confusion_matrix_rpart)) / sum(confusion_matrix_rpart)
+percent_correct_rforest <- sum(diag(as.matrix(confusion_matrix_rforest))) / sum(as.matrix(confusion_matrix_rforest))
+percent_correct_ctree <- sum(diag(confusion_matrix_ctree)) / sum(confusion_matrix_ctree)
+percent_correct_cforest <- sum(diag(as.matrix(confusion_matrix_cforest))) / sum(as.matrix(confusion_matrix_cforest))
 
-```
+
+
+final_estimations <- data.frame(x = c("rpart", "rforest", "ctree","cforest"), y = c(percent_correct_rpart, percent_correct_rforest, percent_correct_ctree, percent_correct_cforest))
+
+ggplot(data = final_estimations, aes(x = x, y = y)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Model", y = "Percent Sucess") +
+  ggtitle("Graph of model accuracy")
+
+
 
 
