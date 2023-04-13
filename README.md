@@ -1,6 +1,6 @@
 # SupernovaClassifier
 
-The format of this report is for a Capstone project where the goal was to ask and answer a question about the PLAsTiCC data set, [found here] (https://www.kaggle.com/competitions/PLAsTiCC-2018/data).
+The format of this report is for a Capstone project where the goal was to ask and answer a question about the PLAsTiCC data set, [found here](https://www.kaggle.com/competitions/PLAsTiCC-2018/data).
 The data used for this report was the lightcurve and metadata. 
 
 # Transients and Supernovas: an intro to classification
