@@ -3,7 +3,7 @@
 The format of this report is for a Capstone project where the goal was to ask and answer a question about the PLAsTiCC data set, [found here](https://www.kaggle.com/competitions/PLAsTiCC-2018/data).
 The data used for this report was the lightcurve and metadata. 
 
-# Transients and Supernovas: an intro to classification
+# Transients and Supernovas: the basics of classification
 ## Abstract:
 This project is the result of a Capstone project where the main goal was to use PLAsTiCC data, and try to learn something new about transients and supernovas.
 My goal with this repository is to show what I learned throughout the process. I decided to focus on classification models, more specifically, which type of classification model can most accurately classify supernovae from the PLAsTiCC data as well as what variables best are most important in the classification. The motivation for this focus is to true to the initial PLAsTiCC challenge which was focused on using ML models to address this same question. This project does however take a slightly different route however as rather than just focusing on the model itself the aim was also to try to see which variables were most impactful in the classification. The success of my analysis is measured by the accuracy of the best performing model 
