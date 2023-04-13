@@ -5,8 +5,8 @@ The data used for this report was the lightcurve and metadata.
 
 # Transients and Supernovas: an intro to classification
 ## Abstract:
-This project is the result of a Capstone project where the main goal was to use PLAsTiCC data, a dataset that I never been exposed to, and try to learn something new about transients and supernovas.
-My goal with this repository is to show what I learned throuhgout the process. I decided to focus on classification models, more specifically, which type of classification model can most accurately classify supernovae from the PLAsTiCC data as well as what variables best are most important in the classification. The motivation for this focus is to try to hold true to the initial PLAsTiCC challenge which was focused on using ML models to try to address this same question. This project does however take a slightly different route however as rather than just focusing on the model itself the aim was also to try to see which variables were most impactful in the classification. The success of my analysis is measured by the accuracy of the best performing model 
+This project is the result of a Capstone project where the main goal was to use PLAsTiCC data, and try to learn something new about transients and supernovas.
+My goal with this repository is to show what I learned throughout the process. I decided to focus on classification models, more specifically, which type of classification model can most accurately classify supernovae from the PLAsTiCC data as well as what variables best are most important in the classification. The motivation for this focus is to true to the initial PLAsTiCC challenge which was focused on using ML models to address this same question. This project does however take a slightly different route however as rather than just focusing on the model itself the aim was also to try to see which variables were most impactful in the classification. The success of my analysis is measured by the accuracy of the best performing model 
 
 In order to do this, I found that the lightcurve and metadata datasets would be best to create new variables that have standardized thresholds that scientists already use to classify supernovas. The data itself would have to be cleaned and processed before being fed into the classification models that would be validated, these models would be ctree, cforest, rpart and rforest. In this paper it will be revealed that with the provided train test splits it is possible to achieve a model with an accuracy of ~85% which is fairly significant. Further the variables used by the model are actually representative of real-world classification thresholds, which further boosts the significance of my findings. 
  However, it should be said that my answer to what variables are best for classification of supernovae is not going to be 100% correct in this analysis, due to a variety of reasons that this report will get into and therefore the analysis and insight provided should only be seen as a way of understanding existing thresholds and only represents a basic supernova classification model.
@@ -64,6 +64,8 @@ mut_meta_lightcurve_merge_abs_mag <- mut_meta_lightcurve_merge %>% rowwise() %>%
 ```
 The reason why mutating the existing flux data and converting it to absolute magnitude and luminosity was needed is due to the discrepancies in the data, being the fact that Flux cannot be negative. Initially, there were many cases where negative flux was recorded, meaning that the object was absorbing energy, which only really happens with black holes. Thus, in order to standardize the data and be able to apply commonly accepted thresholds, I needed to convert them to standardized metrics, being magnitude and luminosity. Moreover, much of the research I found described that these two metrics were most useful in classifications without any knowledge of the type of elements being released from the explosions (which was not included in my data sets)
  
+![](visuals/supernova_thresholds.png)
+
 This table shows the general classification thresholds for classifying supernovae which inspired my choice of variables. (https://en.wikipedia.org/wiki/Supernova)
 The only remaining processing that was needed for this data was to do some small calculations to add days from peak to 50% (I used 50% instead of 10% for reasons I'll get into shortly). The reason why the days from peak to 10% luminosity is an important metric is because it shows a violent peak and a quick drop-off, indicating a large explosion with a quick fade away, characteristic of almost all supernovas. The reason why I chose 50% leads to the final part of the data management which was post processing. 
 The post processing of the data involved using the new variables to filter any values that are not acceptable, specifically for days to 50% luminosity. The reason behind this was because not all transients had been recorded for a period long enough to notice a 50% change in luminosity. The code to check for that is below:
@@ -110,11 +112,20 @@ The issue with these results however was the fact that the models both neglected
 
 # Data visualizations:
 
-  
+rpart model          | ctree model
+:-------------------------:|:-------------------------:
+![](visuals/rpart_model.png)  |  ![](visuals/ctree_model.png)
+
 These two images show the actual models that are generated using rpart and ctree, respectively. You can see the great number of splits using ctree, however the actual splits themselves only categorize 4 of the 6 classes. This can be attributed to the heavily imbalanced data.
  
+![](visuals/results.png)
+
 This graph is essentially a summary of the model success rates.
   
+training data         | testing data
+:-------------------------:|:-------------------------:
+![](visuals/pot_errors_1.png)  |  ![](visuals/pot_errors_2.png)
+
 The above graphs show the distribution of true_target data for transient objects that most likely classify as supernovas (class 6, 16, 42, 52, 53, 62) and there is a clear bias in both the training and testing data, which will heavily skew the classification. 
 
 
