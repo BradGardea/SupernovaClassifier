@@ -142,10 +142,9 @@ The data itself was cleaned and then processed in order to create summary observ
 Thus, while the models created to answer the driving question do not actually have much real-world use outside of the scope of this challenge, it is still interesting to see how well an algorithm such as rpart can perform without many tweaks and how well it recognized the best variables to make its split with, being max absolute magnitude, min absolute magnitude, max luminosity, min luminosity. While I would have liked to see better performance in the classifications, the end results still proved to be quite successful and interesting and leave room for further exploration and improvements. 
 All in all, given the handicaps with the data and the time restriction on the delivery itself, I am very pleased with an 85% success rate and the fact that the model correctly used magnitude and luminosity as the main driving force behind the classification, which does indeed mimic real world classification thresholds.
 
-NOTE: If you are curious about the raw code used, you can see a much fuller expansion of it here: https://github.com/BradGardea/SupernovaClassifier 
 
+# Sources:
 
-Sources:
 https://www.nature.com/subjects/transient-astrophysical-phenomena
  https://www.space.com/6638-supernova.html
  https://astronomy.swin.edu.au/cosmos/F/Flux
