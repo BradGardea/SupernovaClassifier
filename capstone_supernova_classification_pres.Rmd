@@ -99,12 +99,6 @@ get_lightcurve_summary <- function(lightcurve_data_param, potential_supernovas_p
   
   mut_meta_lightcurve_merge <- merge(mut_filter_lightcurve_data, potential_supernovas_param, by = "object_id", all.x = TRUE)
   
-  
-  # test_730 <- mut_meta_lightcurve_merge_abs_mag %>% filter(object_id == 730)
-  # max(test_730$luminosity)
-  # test_730[match( max(test_730$luminosity), test_730$luminosity), ]
-  #    test <- test_730 %>% group_by(object_id) %>% mutate(v = mut_meta_lightcurve_merge_abs_mag[match(max(luminosity), mut_meta_lightcurve_merge_abs_mag$luminosity), ]$mjd)
-  
   suppressWarnings({
   mut_meta_lightcurve_merge_abs_mag <- mut_meta_lightcurve_merge %>% rowwise() %>% mutate(
   absolute_magnitude = calculate_absolute_magnitude(flux, true_distmod, passband_letter),
@@ -118,20 +112,6 @@ get_lightcurve_summary <- function(lightcurve_data_param, potential_supernovas_p
     val_50pct_luminosity = luminosity[1],
     mjd_50pct_luminosity = mjd[1]
     ) %>% select(object_id, mjd_50pct_luminosity, val_50pct_luminosity)
-
-
-  # merge_summary <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% summarise(
-  #   id = object_id,
-  #   class_label = true_target,
-  #   max_absolute_magnitude = max(absolute_magnitude),
-  #   min_absolute_magnitude = min(absolute_magnitude),
-  #   absolute_magnitude_range = max(absolute_magnitude) -  min(absolute_magnitude),
-  #   max_luminosity = max(luminosity),
-  #   min_luminosity = min(luminosity),
-  #   days_to_10pct = mjd_10pct_luminosity - mjd_max_luminosity,
-  #   mjd_range = max(mjd) - min(mjd))
-  
-  
   
     merge_summary <- mut_meta_lightcurve_merge_abs_mag %>% group_by(object_id) %>% summarise(
     id = object_id,
@@ -173,12 +153,8 @@ potential_supernovas_test <- meta_data_test %>% filter(true_target <= 95, true_t
 
 
 # potential_supernovas_train %>% ggplot() + aes(x=true_target) + geom_bar() + ggtitle("Distribution of true_target for objects that are most likley supernovas (train)")
-# # 
-# potential_supernovas_test %>% ggplot() + aes(x=true_target) + geom_bar() + ggtitle("Distribution of true_target for objects that are most likley supernovas (test)")
-
-# num_groups <- potential_supernovas_test %>% group_by(true_target) %>% summarise(n=n())
-# num_groups
-
+# 
+# potential_supernovas_test %>% ggplot() + aes(x=true_target) + geom_bar() + ggtitle("Distribution of true_target for objects that are most likley 
 
 #meta_data %>% ggplot() + aes(x=true_target) + geom_bar() + ggtitle("Distribution of true_target for objects in meta data")
 
@@ -186,48 +162,36 @@ potential_supernovas_test <- meta_data_test %>% filter(true_target <= 95, true_t
 train_summary <- get_lightcurve_summary(light_train, potential_supernovas_train)
 test_summary <- get_lightcurve_summary(light_test, potential_supernovas_test)
 
-# weights <- rep(1, nrow(train_summary))
-# weights[train_summary$absolute_magnitude != 0] <- 0.001
-# weights[train_summary$mjd_range != 0] <- 10
-
 classification_model_rpart = rpart(class_label ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity + days_to_50pct_luminosity + vpec, data = train_summary, method = 'class')
 classification_model_rforest <- randomForest(class_label ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity + days_to_50pct_luminosity + vpec, data = train_summary)
 
 classification_model_ctree <- ctree(class_label ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity + days_to_50pct_luminosity + vpec, data = train_summary)
-# classification_model_cforest <- cforest(class_label ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity, controls = cforest_unbiased(), data = train_summary)
-
-classification_model_rpart
-classification_model_rforest
-classification_model_ctree
-classification_model_cforest
-
-
-
-
-classification_model_rpart$variable.importance
-
-rpart.plot(classification_model_rpart)
+classification_model_cforest <- cforest(class_label ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity + vpec, data = train_summary)
 
 predict_test_rpart <- predict(classification_model_rpart, test_summary, type = "class")
 predict_test_rforest <- predict(classification_model_rforest, test_summary, type = "class")
 predict_test_ctree <- predict(classification_model_ctree, newdata = test_summary)
-# predict_test_cforest <- predict(classification_model_cforest, newdata = test_summary)
-
-confusion_matrix_rpart <- table(test_summary$class_label, predict_test_rpart)
-confusion_matrix_rforest <- table(test_summary$class_label, predict_test_rforest)
-confusion_matrix_ctree <- table(test_summary$class_label, predict_test_ctree)
-
-percent_correct_rpart <- diag(confusion_matrix_rpart)
-
-  
+predict_test_cforest <- predict(classification_model_cforest, newdata = test_summary)
 
 
-# confusion_matrix_cforest <- table(test_summary$class_label, predict_test_cforest)
+confusion_matrix_rpart <-  as.matrix(table(test_summary$class_label, predict_test_rpart))
+confusion_matrix_rforest <- as.data.frame.matrix(table(test_summary$class_label, predict_test_rforest))
+confusion_matrix_ctree <- as.matrix(table(test_summary$class_label, predict_test_ctree))
+confusion_matrix_cforest <- as.data.frame.matrix(table(test_summary$class_label, predict_test_cforest))
 
-confusion_matrix_rpart
-plot(confusion_matrix_rforest)
-plot(confusion_matrix_ctree)
-# confusion_matrix_cforest
+percent_correct_rpart <- sum(diag(confusion_matrix_rpart)) / sum(confusion_matrix_rpart)
+percent_correct_rforest <- sum(diag(as.matrix(confusion_matrix_rforest))) / sum(as.matrix(confusion_matrix_rforest))
+percent_correct_ctree <- sum(diag(confusion_matrix_ctree)) / sum(confusion_matrix_ctree)
+percent_correct_cforest <- sum(diag(as.matrix(confusion_matrix_cforest))) / sum(as.matrix(confusion_matrix_cforest))
+
+
+
+final_estimations <- data.frame(x = c("rpart", "rforest", "ctree","cforest"), y = c(percent_correct_rpart, percent_correct_rforest, percent_correct_ctree, percent_correct_cforest))
+
+ggplot(data = final_estimations, aes(x = x, y = y)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Model", y = "Percent Sucess") +
+  ggtitle("Graph of model accuracy")
 
 ```
 
