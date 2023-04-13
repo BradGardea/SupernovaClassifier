@@ -43,7 +43,8 @@ The data used to answer the driving question is broken down into 2 major groups,
 2.	Metadata
 * Data of data, this includes more technical data including distance, redshift and true data, meaning the actual measurements for certain variables, corrected for potential errors.
 With these definitions in mind, I can now explain how the data was used to answer the driving question.  The data usage was primarily broken up into 4 parts: initialization, filtering, processing and post processing.
- 	The data initialization is straightforward, using the ```read_csv``` function in R, I loaded 2 types of data, training and testing. The training data included “plasticc_train_lightcurves.csv” and “plasticc_train_metadata.csv” with sizes ~1.4 million and ~7.5 thousand, respectively. The testing data however included “plasticc_test_set_batch1.csv” which PLAsTiCC defines as the deep drilling field (DDF) which includes higher quality data, and “plasticc_test_metadata.csv” with sizes ~11 million and ~3.5 million, respectively. 
+ 	The data initialization is straightforward, using the ```read_csv``` function in R, I loaded 2 types of data, training and testing. The training data included “plasticc_train_lightcurves.csv” and “plasticc_train_metadata.csv” with sizes ~1.4 million and ~7.5 thousand, respectively. The testing data however included “plasticc_test_set_batch1.csv” which PLAsTiCC defines as the deep drilling field (DDF) which includes higher quality data, and “plasticc_test_metadata.csv” with sizes ~11 million and ~3.5 million, respectively.
+  
 Given this information there is a glaring issue, with any classification models, the training testing split should be 60-40, 70-30 or 80-20 (in common cases), however the difference between these two is roughly 800% in favor of the TESTING data. As a result, there will be huge discrepancies in the actual predictions due the differences in data, however, staying true to the nature of the competition that this data was used for, I did NOT create mock data or sample existing data in order to try to keep my predictions as accurate as possible to the real circumstances (and because it would not have been computationally feasible for creating classification models using the built in functionality of R).
 Once the data was initialized, the next step was filtering it, knowing the 6 class labels for potential supernovas I used the filter function to filter the training data to only include transients who’s ```true_target``` was one of the 6 previously named classes. The code for both the training and testing was as follows: 
 ```R potential_supernovas_train <- meta_data_train %>% filter(true_target <= 95, true_target %in% c(6, 16, 42, 52, 53, 62))  
@@ -95,7 +96,7 @@ The confusion matrices were then used to show the percentage of correct predicti
 The results of the classification predictions were successful with the results being grouped in the table below and the visualizations previously mentioned in the data visualization section. 
 | Model  | Percent correct |
 | :--- | ---: |
-| ctree| 8420941       |
+| ctree| 0.8420941       |
 | cforest| 0.8425193        |
 | rpart| 0.8426256        |
 | rforest| 0.8170077        |
