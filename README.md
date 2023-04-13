@@ -98,10 +98,10 @@ The confusion matrices were then used to show the percentage of correct predicti
 The results of the classification predictions were successful with the results being grouped in the table below and the visualizations previously mentioned in the data visualization section. 
 | Model  | Percent correct |
 | :--- | ---: |
-| ctree| 0.8420941       |
-| cforest| 0.8425193        |
-| rpart| 0.8426256        |
-| rforest| 0.8170077        |
+| ctree| 84.20941       |
+| cforest| 84.25193        |
+| rpart| 84.26256        |
+| rforest| 81.70077        |
 
 **NOTE**: The formula for all models was ``` class_label ~ max_absolute_magnitude + min_absolute_magnitude + max_luminosity + min_luminosity + days_to_50pct_luminosity + vpec```, it would have been possible to obtain more accurate results by introducing weights and processing the data further, however the purpose of this project was to be a way of learning more about the subject and about implementation of classification models.
 The table shows that rpart was the most accurate model by ~0.0001%, suggesting that there was no noticeable difference between the Gini coefficient (default error measurement with rpart) and the significance tests used by ctrees. Interestingly the forests both performed worse than the individual trees, this may be due to imbalanced data which is an isue I described earlier in this report.
@@ -158,8 +158,7 @@ https://itu.physics.uiowa.edu/labs/advanced/astronomical-redshift
 https://astronomy.swin.edu.au/cosmos/d/Distance+Modulus\
 https://en.wikipedia.org/wiki/Inverse-square_law
 
-Appendix: 
-Question 1:
+# Appendix: 
 Below is the code for generating the variables mentioned throughout the report: 
 Values from https://www.astronomy.ohio-state.edu/martini.10/usefuldata.html
 ```R
