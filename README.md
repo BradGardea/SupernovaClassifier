@@ -77,7 +77,7 @@ The post processing of the data involved using the new variables to filter any v
 ```
 This code returned some NaNs which were then filtered out, reducing the total data from well over a million to only ~3 thousand and ~20 thousand for the train and test values respectively.  This filtering, while greatly reducing run-time, did create some problems, which I will further explore in the results section. The values returned from the filtering were then used to summaries key variables that would be used in the actual models. These variables were the: object id, max absolute magnitude, min absolute magnitude, max luminosity, min luminosity, days to 50% luminosity, the vpec (negligible) and the date range that the transient was recorded in.  
 
-# Methods and Analysis
+## Methods and Analysis
 
 The methods and analysis used for the classification were built on the data management as all that needed to be done once the data was cleaned and processed was to use it in the classification models. In order to validate the accuracy of a model I created 4 models (ctree, cforest, rpart, rforest) all using the same independent variables in their formulas, this process would allow me to compare model accuracy.
 The actual process, summarized can be described as follows:
@@ -93,7 +93,7 @@ The code for generating the for generating the models was as follows
 The predictions were then used to create confusion matrices, which would show me the amount of true positive, true negatives, false positives and false negatives for the predicted supernova class vs the actual supernova class.
 The confusion matrices were then used to show the percentage of correct predictions and then plotted and compared which will be covered in results.
 
-# Results:
+## Results:
 
 The results of the classification predictions were successful with the results being grouped in the table below and the visualizations previously mentioned in the data visualization section. 
 | Model  | Percent correct |
@@ -110,7 +110,7 @@ The issue with these results however was the fact that the models both neglected
 
 
 
-# Data visualizations:
+## Data visualizations:
 
 rpart model          | ctree model
 :-------------------------:|:-------------------------:
@@ -129,13 +129,13 @@ training data         | testing data
 The above graphs show the distribution of true_target data for transient objects that most likely classify as supernovas (class 6, 16, 42, 52, 53, 62) and there is a clear bias in both the training and testing data, which will heavily skew the classification. 
 
 
-# Discussion: 
+## Discussion: 
 The results themselves are fairly straightforward, however this would be a good time to discuss the role that the previously mentioned issues would play in the results themselves. The most significant issue was the imbalanced data, which would lead the models to being improperly trained and biased, which was the case. While this does not seem clear at first, using graphs showing the potential error with the data we can see that the missing 2 classes that the model did not categorize well (class 52 and 62).
 I touched on a potential reason for this issue being that in the data, both train and test, there were clear discrepancies in the ammount of data for those objects and further, the normal solutions to dealing with this issue (resampling and making mock data) would not have been feasible in this case as I would be sacrificing run time or creating inaccurate data. 
 Another potential issue would have been underfitting the data, which may be surprising given the number of parameters used in the models. The data provided for the lightcurve data was restrictive and the only reason I was able to get the results I had obtained was because of the merge with the metadata. While it would have been possible to find more combinations of variables, the amount of time I had to create the models and presentation did not allow for that. 
 In terms of statistical significance and broader use for this information I would say that a model like this would be useful in terms of classification of supernovae within PLAsTiCC, thus making it statistically significant. However, the clear issue that exists with this is the fact that the data required to make these models work needs to be specifically curated, meaning that the algorithms and models themselves are not that robust for externalities or error handling. Thus, while the best model performed well in this fairly closed off context it would be a reach to say that the models would be able to outcompete even the most basic machine learning algorithms. The reason for this is with machine learning, there is an almost infinite number of versions can be created to find the best fit even with a relatively small training set, however in my circumstances the time and feasibility of doing so with the models I used was not there. 
 
-# Conclusion:
+## Conclusion:
 The end result of this inquiry allowed me to create 4 classification models for the PLAsTiCC dataset with varying performance. The goal was to use a combination of lighcurve and metadata to create variables that already have standardized thresholds in order to see how well they perform in a classification model.
 
 The data itself was cleaned and then processed in order to create summary observations which could then be used directly by classification models. The benefit of this method was the high accuracy of prediction being ~85% with the best model, however due to a variety of factors including imbalanced data, efficiency and underfitting I was not able to achieve a higher accuracy. While 85% is a high success rate, the rpart model, which was the best performing cannot truly compare against other machine learning algorithms that would have taken much more time to create.
@@ -143,7 +143,7 @@ Thus, while the models created to answer the driving question do not actually ha
 All in all, given the handicaps with the data and the time restriction on the delivery itself, I am very pleased with an 85% success rate and the fact that the model correctly used magnitude and luminosity as the main driving force behind the classification, which does indeed mimic real world classification thresholds.
 
 
-# Sources:
+## Sources:
 
 https://www.nature.com/subjects/transient-astrophysical-phenomena
  https://www.space.com/6638-supernova.html
@@ -158,7 +158,7 @@ https://itu.physics.uiowa.edu/labs/advanced/astronomical-redshift
 https://astronomy.swin.edu.au/cosmos/d/Distance+Modulus\
 https://en.wikipedia.org/wiki/Inverse-square_law
 
-# Appendix: 
+## Appendix: 
 Below is the code for generating the variables mentioned throughout the report: 
 Values from https://www.astronomy.ohio-state.edu/martini.10/usefuldata.html
 ```R
