@@ -20,8 +20,8 @@ In order to properly understand how this question was answered a few terms shoul
 1.	Transients:
 * Transients are formally defined as astronomical phenomena with durations of seconds, weeks or years. (https://www.nature.com/subjects/transient-astrophysical-phenomena) 
 2.	Supernovas:
-* A supernova is what happens when a star has reached the end of its life and explodes in a brilliant burst of light. (https://www.space.com/6638-supernova.html) 
-* 6 supernova classes (PLAsTiCC defines them as 6,16,42,52,62):
+ * A supernova is what happens when a star has reached the end of its life and explodes in a brilliant burst of light. (https://www.space.com/6638-supernova.html) 
+ * 6 supernova classes (PLAsTiCC defines them as 6,16,42,52,62):
     *	class 6: SNIa (Type Ia supernova)
     * class 16: SNIbc (core-collapse supernova Type Ibc)
     * class 42: SNIIn (Type IIn supernova)
