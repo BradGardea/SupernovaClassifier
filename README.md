@@ -18,30 +18,30 @@ This question focuses on using two types of data from the PLAsTiCC; lightcurve a
 In order to properly understand how this question was answered a few terms should be defined:
 
 1.	Transients:
-* Transients are formally defined as astronomical phenomena with durations of seconds, weeks or years. (https://www.nature.com/subjects/transient-astrophysical-phenomena) 
+     * Transients are formally defined as astronomical phenomena with durations of seconds, weeks or years. (https://www.nature.com/subjects/transient-astrophysical-phenomena) 
 2.	Supernovas:
- * A supernova is what happens when a star has reached the end of its life and explodes in a brilliant burst of light. (https://www.space.com/6638-supernova.html) 
- * 6 supernova classes (PLAsTiCC defines them as 6,16,42,52,62):
-    *	class 6: SNIa (Type Ia supernova)
-    * class 16: SNIbc (core-collapse supernova Type Ibc)
-    * class 42: SNIIn (Type IIn supernova)
-    * class 52: SNII (core-collapse supernova Type II)
-    * class 53: SNIIL (Type II-L supernova)
-    * class 62: SNIIb (Type IIb supernova)
+    * A supernova is what happens when a star has reached the end of its life and explodes in a brilliant burst of light. (https://www.space.com/6638-supernova.html) 
+    * 6 supernova classes (PLAsTiCC defines them as 6,16,42,52,62):
+        * class 6: SNIa (Type Ia supernova)
+        * class 16: SNIbc (core-collapse supernova Type Ibc)
+        * class 42: SNIIn (Type IIn supernova)
+        * class 52: SNII (core-collapse supernova Type II)
+        * class 53: SNIIL (Type II-L supernova)
+        * class 62: SNIIb (Type IIb supernova)
 3.	Flux:
- * Flux (or radiant flux), F, is the total amount of energy that crosses a unit area per unit time. (https://astronomy.swin.edu.au/cosmos/F/Flux)  
+    * Flux (or radiant flux), F, is the total amount of energy that crosses a unit area per unit time. (https://astronomy.swin.edu.au/cosmos/F/Flux)  
 4.	Absolute/Apparent Magnitude:
- * The absolute magnitude of a star, M is the magnitude the star would have if it was placed at a distance of 10 parsecs from Earth. (https://astronomy.swin.edu.au/cosmos/A/Absolute+Magnitude) 
- * The apparent magnitude of a celestial object, such as a star or galaxy, is the brightness measured by an observer at a specific distance from the object. (https://astronomy.swin.edu.au/cosmos/A/Apparent+Magnitude) 
+    * The absolute magnitude of a star, M is the magnitude the star would have if it was placed at a distance of 10 parsecs from Earth. (https://astronomy.swin.edu.au/cosmos/A/Absolute+Magnitude) 
+    * The apparent magnitude of a celestial object, such as a star or galaxy, is the brightness measured by an observer at a specific distance from the object. (https://astronomy.swin.edu.au/cosmos/A/Apparent+Magnitude) 
 5.	Luminosity:
- * Measure of the total amount of energy radiated by a star or other celestial object per second. (https://www.atnf.csiro.au/outreach/education/senior/astrophysics/photometry_luminosity.html)
+    * Measure of the total amount of energy radiated by a star or other celestial object per second. (https://www.atnf.csiro.au/outreach/education/senior/astrophysics/photometry_luminosity.html)
 
 ## Data:
 The data used to answer the driving question is broken down into 2 major groups, lightcurve and metadata [and can be found here](https://www.kaggle.com/competitions/PLAsTiCC-2018/data). The key terms used throughout this report are defined below. 
 1.	Lightcurve data
- * Light curves are designed to make graphs that show the brightness of an object over a period, depending on passband information (the wavelength that the object was detected in I.e., visible, IR, blue etc.).
+    * Light curves are designed to make graphs that show the brightness of an object over a period, depending on passband information (the wavelength that the object was detected in I.e., visible, IR, blue etc.).
 2.	Metadata
- * Data of data, this includes more technical data including distance, redshift and true data, meaning the actual measurements for certain variables, corrected for potential errors.
+    * Data of data, this includes more technical data including distance, redshift and true data, meaning the actual measurements for certain variables, corrected for potential errors.
 With these definitions in mind, I can now explain how the data was used to answer the driving question.  The data usage was primarily broken up into 4 parts: initialization, filtering, processing and post processing.
  	The data initialization is straightforward, using the ```read_csv``` function in R, I loaded 2 types of data, training and testing. The training data included “plasticc_train_lightcurves.csv” and “plasticc_train_metadata.csv” with sizes ~1.4 million and ~7.5 thousand, respectively. The testing data however included “plasticc_test_set_batch1.csv” which PLAsTiCC defines as the deep drilling field (DDF) which includes higher quality data, and “plasticc_test_metadata.csv” with sizes ~11 million and ~3.5 million, respectively.
   
@@ -81,6 +81,7 @@ This code returned some NaNs which were then filtered out, reducing the total da
 
 The methods and analysis used for the classification were built on the data management as all that needed to be done once the data was cleaned and processed was to use it in the classification models. In order to validate the accuracy of a model I created 4 models (ctree, cforest, rpart, rforest) all using the same independent variables in their formulas, this process would allow me to compare model accuracy.
 The actual process, summarized can be described as follows:
+
 1.	Prepare data by cleaning and merging lightcurve and metadata.
 2.	Ensure that the data you are dealing with is only values you are interested in classifying (6,16,42,52,53,62). 
 3.	Create a summary function that outputs a dataframe containing all variables that would be used in the models, ensure that all NaNs are cleaned and that outliers are removed (some of the formulas used to create the variables tested can be found in the appendix).
