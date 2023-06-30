@@ -13,7 +13,7 @@ In order to do this, I found that the lightcurve and metadata datasets would be 
  
 
 ## Introduction:
-The driving quesiton behind this report is: How can we classify transients as supernovas using a combination of lightcurve and metadata and what type of tree produces the best results?
+The driving quesiton behind this report is: How can we classify transients as supernovas using a combination of lightcurve and metadata and what type of classification tree produces the best results?
 This question focuses on using two types of data from the PLAsTiCC; lightcurve and metadata, in order to produce classification models that can predict transient events as supernovas, with some accuracy.
 In order to properly understand how this question was answered a few terms should be defined:
 
